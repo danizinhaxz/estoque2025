@@ -8,7 +8,7 @@ def listar(engine: Engine):
     with Session(engine) as session:
         sentenca = select(Categoria).order_by(Categoria.nome)
         registros = session.execute(sentenca).scalars()
-        print("Id, Nome, #produtos, Data cadastro, Data de modificação")
+        print("Nome, #produtos, Data cadastro, Data de modificação")
         for categoria in registros:
             print(f"{categoria.id}, {categoria.nome}, {len(categoria.lista_de_produtos)}, "
                   f"{categoria.dta_cadastro}, {categoria.dta_atualizacao}")
@@ -27,18 +27,23 @@ def adicionar(engine: Engine):
         else:
             print("Categoria adicionada")
 
+
+def selecionar_categoria(session: Session) -> Categoria:
+    sentenca = select(Categoria).order_by(Categoria.nome)
+    categoria = session.execute(sentenca).scalars()
+    dicionario = dict()
+    contador = 1
+    for c in categoria:
+        print(f"{contador} - {c.nome}")
+        dicionario[contador] = c.id
+        contador += 1
+    id = int(input("Digite o número da categoria que deve ser alterada: "))
+    categoria = session.get_one(Categoria, dicionario[id])
+    return categoria
+
 def modificar(engine: Engine):
     with Session(engine) as session:
-        sentenca = select(Categoria).order_by(Categoria.nome)
-        categoria = session.execute(sentenca).scalars()
-        dicionario = dict()
-        contador = 1
-        for c in categoria:
-            print(f"{contador} - {c.nome}")
-            dicionario[contador] = c.id
-            contador += 1
-        id = int(input("Digite o número da categoria que deve ser alterada: "))
-        categoria = session.get_one(Categoria, dicionario[id])
+        categoria = selecionar_categoria(session)
         nome = input("Novo nome da categoria: ")
         categoria.nome = nome
         try:
@@ -49,18 +54,10 @@ def modificar(engine: Engine):
         else:
             print("Categoria atualizada")
 
+
 def remover(engine: Engine):
     with Session(engine) as session:
-        sentenca = select(Categoria).order_by(Categoria.nome)
-        categoria = session.execute(sentenca).scalars()
-        dicionario = dict()
-        contador = 1
-        for c in categoria:
-            print(f"{contador} - {c.nome}")
-            dicionario[contador] = c.id
-            contador += 1
-        id = int(input("Digite o número da categoria que deve ser alterada: "))
-        categoria = session.get_one(Categoria, dicionario[id])
+        categoria = selecionar_categoria(session)
         session.delete(categoria)
         try:
             session.commit()
